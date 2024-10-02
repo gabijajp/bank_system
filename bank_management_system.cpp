@@ -9,19 +9,34 @@
 using namespace std;
 
 struct Account {
-   int idNumber{};
+   int idNumber;
    string firstName;
    string lastName;
-   double balance{};
-   char type{};
+   double moneyBalance;
+   char type;
 
    void displayInfo() {
       ofstream writeFile;
       writeFile.open("accounts.txt", ofstream::app); //Writes at the end of the file
-      writeFile << idNumber << " " << firstName << " " << lastName << " " << balance << " " << type << endl;
-      writeFile.close();
+      if (writeFile.is_open()) {
+         writeFile << idNumber << " " << firstName << " " << lastName << " " << moneyBalance << " " << type << endl;
+         writeFile.close();
+      } else {
+         cout << "Unable to open file" << endl;
+      }
    }
-};
+
+   void changeInfo() {
+      ofstream writeFile;
+      writeFile.open("accounts.txt", ofstream::out);
+      if (writeFile.is_open()) {
+         writeFile << idNumber << " " << firstName << " " << lastName << " " << moneyBalance << " " << type << endl;
+         writeFile.close();
+      } else {
+         cout << "Unable to open file" << endl;
+      }
+   }
+   };
 
 char displayMenu();
 void createAccount();
@@ -88,7 +103,7 @@ void createAccount() {
    cout << "Enter your last name: ";
    cin>>accounts.lastName;
    cout << "Enter your balance: ";
-   cin>>accounts.balance;
+   cin>>accounts.moneyBalance;
    cout << "Enter your bank account type (c-checking or s-savings): ";
    cin>>accounts.type;
    cout << "Enter your ID number: ";
@@ -105,7 +120,7 @@ void checking(char function) {
       if(function == 'w') withdraw();
       if(function == 'b') balance();
    }
-   else if(answer == 'n' || answer == 'N') {
+   else if( answer == 'n' || answer == 'N') {
       cout << "Create an account by selecting 1 from Main Menu" << endl;
    }
    else {
@@ -114,7 +129,36 @@ void checking(char function) {
 }
 
 void deposit() {
-   cout << "Deposit ";
+   Account accounts;
+   string idNum;
+   int sum2=0, sum1=0, givenIdNum;
+   double money;
+   accounts.idNumber = 0;
+   cout << "Enter you ID number: ";
+   cin >> givenIdNum;
+   cout << "Enter amount of money you'd like to deposit: ";
+   cin >> money;
+   ifstream readFile;
+   readFile.open("accounts.txt", ifstream::in);
+   if (readFile.is_open()) {
+      while (!readFile.eof()) {
+         sum1++;
+      }
+      while(sum2 != sum1) {
+         readFile >> idNum >> accounts.firstName >> accounts.lastName >> accounts.moneyBalance >> accounts.type;
+         accounts.idNumber = stoi(idNum); //change string into int
+         if(givenIdNum != accounts.idNumber) {
+            accounts.changeInfo();
+         } else {
+            accounts.moneyBalance += money;
+            accounts.changeInfo();
+         }
+         sum2++;
+      }
+      readFile.close();
+   } else {
+      cout << "Unable to open file" << endl;
+   }
 }
 
 void withdraw() {
