@@ -4,6 +4,7 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 using namespace std;
@@ -12,38 +13,32 @@ struct Account {
    int idNumber;
    string firstName;
    string lastName;
-   double moneyBalance;
+   double balance;
    char type;
 
    void displayInfo() {
-      ofstream writeFile;
-      writeFile.open("accounts.txt", ofstream::app); //Writes at the end of the file
+      fstream writeFile;
+      writeFile.open("accounts.cvs", ios::out | ios::app); //Writes at the end of the file
       if (writeFile.is_open()) {
-         writeFile << idNumber << " " << firstName << " " << lastName << " " << moneyBalance << " " << type << endl;
+         writeFile << idNumber << ", "
+                   << firstName << ", "
+                   << lastName << ", "
+                   << balance << ", "
+                   << type
+                   << "\n";
          writeFile.close();
       } else {
          cout << "Unable to open file" << endl;
       }
    }
 
-   void changeInfo() {
-      ofstream writeFile;
-      writeFile.open("accounts.txt", ofstream::out);
-      if (writeFile.is_open()) {
-         writeFile << idNumber << " " << firstName << " " << lastName << " " << moneyBalance << " " << type << endl;
-         writeFile.close();
-      } else {
-         cout << "Unable to open file" << endl;
-      }
-   }
    };
 
 char displayMenu();
 void createAccount();
 void checking(char function);
-void deposit();
-void withdraw();
-void balance();
+void actionWithMoney(char function);
+void moneyBalance();
 
 int main() {
    char choice = displayMenu();
@@ -62,7 +57,6 @@ int main() {
             choice = displayMenu();
             break;
          case '4':
-            checking(*"b");
             choice = displayMenu();
             break;
          case '5':
@@ -74,7 +68,7 @@ int main() {
             break;
          default:
             cout << "Invalid choice." << endl;
-            choice=displayMenu();
+            choice = displayMenu();
             break;
       }
    } while (choice <'6' || choice >'6');
@@ -103,7 +97,7 @@ void createAccount() {
    cout << "Enter your last name: ";
    cin>>accounts.lastName;
    cout << "Enter your balance: ";
-   cin>>accounts.moneyBalance;
+   cin>>accounts.balance;
    cout << "Enter your bank account type (c-checking or s-savings): ";
    cin>>accounts.type;
    cout << "Enter your ID number: ";
@@ -116,55 +110,64 @@ void checking(char function) {
    cout << "Do you have an account?(y/n): ";
    cin >> answer;
    if(answer == 'y' || answer == 'Y') {
-      if(function == 'd') deposit();
-      if(function == 'w') withdraw();
-      if(function == 'b') balance();
+      actionWithMoney(function);
    }
-   else if( answer == 'n' || answer == 'N') {
-      cout << "Create an account by selecting 1 from Main Menu" << endl;
+   else if (answer == 'n' || answer == 'N') {
+      cout << "Let's create an account for you." << endl;
+      createAccount();
    }
    else {
       cout << "Invalid choice." << endl;
    }
 }
 
-void deposit() {
-   Account accounts;
-   string idNum;
-   int sum2=0, sum1=0, givenIdNum;
+void actionWithMoney(char function) {
+   int givenIdNum, idNumber, list_size, i;
    double money;
-   accounts.idNumber = 0;
+   vector <string> list;
+   string line, word;
    cout << "Enter you ID number: ";
    cin >> givenIdNum;
-   cout << "Enter amount of money you'd like to deposit: ";
+   if (function == 'd') cout << "Enter amount of money you'd like to deposit: ";
+   if (function == 'w') cout << "Enter amount of money you'd like to withdraw: ";
    cin >> money;
-   ifstream readFile;
-   readFile.open("accounts.txt", ifstream::in);
-   if (readFile.is_open()) {
+   fstream readFile, updateFile;
+   readFile.open("accounts.cvs", ifstream::in);
+   updateFile.open("accountsnew.cvs", ofstream::out);
+   if (readFile.good()) {
       while (!readFile.eof()) {
-         sum1++;
-      }
-      while(sum2 != sum1) {
-         readFile >> idNum >> accounts.firstName >> accounts.lastName >> accounts.moneyBalance >> accounts.type;
-         accounts.idNumber = stoi(idNum); //change string into int
-         if(givenIdNum != accounts.idNumber) {
-            accounts.changeInfo();
-         } else {
-            accounts.moneyBalance += money;
-            accounts.changeInfo();
+         list.clear();
+         getline(readFile, line); //gets line from .cvs file
+         stringstream s(line); //breaks the line into words
+         while(getline(s, word, ',')) {
+            list.push_back(word);
          }
-         sum2++;
+         idNumber = stoi(list[0]);
+         list_size = list.size();
+         if (givenIdNum == idNumber) {
+            if (function == 'd') money += stoi(list[3]); // changes string to int and adds
+            if (function == 'w') money = stoi(list[3]) - money; // changes string to int and subtracts
+            stringstream changeBalance;
+            changeBalance << money;
+            list[3] = changeBalance.str(); //changes double to string
+            for (i = 0; i < list_size - 1; i++) {
+               updateFile << list[i] << ", ";
+            }
+            updateFile << list[list_size - 1] << "\n";
+         } else {
+            for (i = 0; i < list_size - 1; i++) {
+               updateFile << list[i] << ", ";
+            }
+            updateFile << list[list_size - 1] << "\n";
+         }
       }
       readFile.close();
-   } else {
-      cout << "Unable to open file" << endl;
+      updateFile.close();
+      remove("accounts.cvs"); //removing old file
+      rename("accountsnew.cvs", "accounts.cvs"); //renaming updated file to old file's name
    }
 }
 
-void withdraw() {
-   cout << "Withdraw ";
-}
-
-void balance() {
+void moneyBalance() {
    cout << "Balance ";
 }
